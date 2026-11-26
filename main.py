@@ -81,10 +81,17 @@ def check_line(line: str) -> None:
 
 
 def write_entry(line: str, destination: Path = DESTINATION) -> Path:
-    """Validate *line*, then write it (with a trailing newline) to disk."""
+    """Validate *line*, write it (with a trailing newline), then verify.
+
+    The read-back guards against a silent partial write: what the sealed
+    scorer will read must be exactly the validated line, byte for byte.
+    """
     check_line(line)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(line + "\n", encoding="utf-8")
+    written = destination.read_text(encoding="utf-8")
+    if written != line + "\n":
+        raise SystemExit("gate failed: written file does not match the line")
     return destination
 
 
